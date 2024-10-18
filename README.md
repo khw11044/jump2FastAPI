@@ -1,54 +1,104 @@
 # 점프 투 FastAPI 따라하기
 
-Hello API 만들기
+### Svelte 웹 페이지 만들기
 
-가장 먼저 할 일은 FastAPI에 Hello API를 만드는 것이다. 파이참 에디터를 열고 다음과 같은 main.py 파일을 작성하자.
+이제 백엔드의 Hello API를 완성했으니 프론트엔드 영역에서 웹 페이지를 만들어 보자. 
 
-[파일명: projects/myapi/main.py]
+**VSCode를 열고 projects/myapi/frontend/src/App.svelte 파일을 열어 디폴트로 작성된 내용을 모두 지우고 다음과 같이 작성하자.**
+
+[파일명: frontend/src/App.svelte]
+
+```html
+<h1>Hello</h1>
+```
+
+![image](https://github.com/user-attachments/assets/73f9fc5c-d587-4085-b92a-9b449d3c3755)
+
+그러면 브라우저에서 http://localhost:5173/ 호출시 다음과 같이 Hello 라는 문구가 화면 정중앙에 표시될 것이다.
+
+
+화면 좌상단이 아닌 정중앙에 표시된 이유는 app.css 파일에 작성된 스타일 때문이다. 앞으로 이 곳에 정의된 스타일을 사용할 이유가 없으므로 app.css 파일의 내용도 모두 제거하자.
+
+[파일명: frontend/src/app.css]
+
+```html
+/* 내용을 모두 지운다. */
+```
+
+그러면 이제 Hello가 정중앙이 아닌 좌상단에 표시되는 것을 확인할 수 있을 것이다.
+
+### FastAPI 서버와 통신하기
+
+이제 Svelte에 작성한 App.svelte 파일에서 Hello API를 호출하여 돌려받은 값을 화면에 출력해 보자. Hello API는 호출시 다음과 같은 json을 리턴한다.
+
+
+```
+{
+  "message": "안녕하세요 파이보"
+}
+```
+
+다음과 같이 App.svelte 파일을 수정하자.
+
+[파일명: /frontend/src/App.svelte]
+
+```html
+<script>
+  let message;
+
+  fetch("http://127.0.0.1:8000/hello").then((response) => {
+    response.json().then((json) => {
+      message = json.message;
+    });
+  });
+</script>
+
+<h1>{message}</h1>
+
+```
+
+http://localhost:5173/ 확인 
+
+![image](https://github.com/user-attachments/assets/38883ab8-f132-4d72-8e8f-e721012d4edf)
+
+와우 
+
+화면에는 undefined라고만 표시된다. 
+오류가 발생했기 때문
+
+
+프론트엔드에서 FastAPI 백엔드 서버로 호출이 불가능한 상황이다. 이 오류는 FastAPI에 CORS 예외 URL을 등록하여 해결할 수 있다.
+
+
+### FastAPI의 main.py 파일을 수정하자.
+
+[파일명: main.py]
 
 ```python
-
 from fastapi import FastAPI
+from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:5173"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/hello")
 def hello():
     return {"message": "안녕하세요 파이보"}
+
 ```
 
-이제 작성한 프로그램을 실행해 보자. FastAPI로 작성한 프로그램을 실행하기 위해서는 FastAPI 프로그램을 구동할 서버가 필요하다. 먼저 파이참에서 터미널을 실행한 후 다음과 같이 uvicorn을 설치하자.
+오 이제 제대로 나온다.
 
-유비콘(Uvicorn)은 비동기 호출을 지원하는 파이썬용 웹 서버이다.
-
-[터미널에서 실행]
-
-```bash
-(myapi) c:/projects/myapi> pip install "uvicorn[standard]"
-```
-
-그리고 다음과 같이 FastAPI 서버를 실행하자.
-
-[터미널에서 실행]
-
-
-```bash
-(myapi) c:/projects/myapi> uvicorn main:app --reload
-```
-
-아래와 같이 2개의 터미널에서 실행되어야 한다.
-
-![image](https://github.com/user-attachments/assets/4e403979-c5c3-4783-b856-f3bdd11356da)
-
-그러면 현재 PC에 8000번 포트로 FastAPI서버가 구동된다.
-
-> main:app에서 main은 main.py 파일을 의미하고 app은 main.py의 app 객체를 의미한다. --reload 옵션은 프로그램이 변경되면 서버 재시작 없이 그 내용을 반영하라는 의미이다.
-
-FastAPI가 실행되면 FastAPI로 작성한 API는 /docs URL을 호출하여 테스트해 볼 수 있다. 브라우저에서 다음 URL을 실행해 보자.
-
-> http://127.0.0.1:8000/docs
-
-그러면 다음과 같은 화면이 나타난다. (이 화면이 바로 FastAPI가 자랑하는 테스트 가능한 API 문서이다. 이 화면은 React로 만들어졌다.)
-
-![image](https://github.com/user-attachments/assets/52ba4858-a2de-4399-a572-6c0c63ea2189)
+![image](https://github.com/user-attachments/assets/6807de1b-c161-444c-97e7-714914fdfd7e)
